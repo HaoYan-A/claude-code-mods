@@ -8,7 +8,7 @@
     {
       "name": "subagent-effort",
       "source": "./plugins/subagent-effort",
-      "description": "Pick each subagent's model and reasoning effort in plain words, e.g. \"explore with sonnet high, plan with opus max\""
+      "description": "Pick each subagent's model and reasoning effort in plain words, any model your provider serves: \"explore with sonnet high, second opinion from gpt-6 medium\""
     }
   ]
 }

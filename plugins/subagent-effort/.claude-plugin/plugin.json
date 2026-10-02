@@ -1,7 +1,7 @@
 {
   "name": "subagent-effort",
-  "version": "0.1.0",
-  "description": "Lets the main session set each subagent's reasoning effort with an [effort:<level>] line at the top of the Agent prompt",
+  "version": "0.2.0",
+  "description": "Run each subagent on any model (gpt-6, grok-4.7, ...) at any reasoning effort, through model and effort parameters on the Agent tool",
   "author": {
     "name": "HaoYan-A"
   },

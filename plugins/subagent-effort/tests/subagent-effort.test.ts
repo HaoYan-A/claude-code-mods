@@ -1,24 +1,41 @@
-import { expect, test } from 'claude-code/testing'
+import { type Engine, expect, test } from 'claude-code/testing'
 import type { On, TurnStepInput } from 'claude-code'
 
+const CORE = { plugin: 'engine', tier: 'core' } as const
+
 const SPAWN = {
-  tool_use_id: 'toolu_1',
-  description: 'look around',
-  subagentType: 'Explore',
-  provider: { plugin: 'engine', tier: 'core' },
+  provider: CORE,
   parentModel: 'claude-opus-5-5',
   background: false,
   fork: false,
 } as const
 
-const STEP = { turnId: 't1', index: 0, model: 'claude-sonnet-5-5', effort: 'max', messageCount: 1 } as const
+const STEP = { turnId: 't1', index: 0, model: 'claude-opus-5-5', effort: 'max', messageCount: 1 } as const
 
-// 引擎侧的替身：记下子代理拿到的任务、每次请求的档位和对话记录里的灰字
-function engine(on: On) {
-  const seen = { prompts: [] as string[], efforts: [] as TurnStepInput['effort'][], logs: [] as string[] }
+// 引擎侧的替身：Agent 工具收到调用后启动子代理；记下工具收到的参数、子代理拿到的模型、每次请求的档位和灰字
+function engine($: Engine, on: On) {
+  const seen = {
+    calls: [] as Record<string, unknown>[],
+    spawnModels: [] as (string | undefined)[],
+    efforts: [] as TurnStepInput['effort'][],
+    logs: [] as string[],
+  }
+  on('tool.call', { tool: 'Agent' }, async (_, e) => {
+    seen.calls.push({ ...e })
+    await $.agent.spawn({
+      ...SPAWN,
+      tool_use_id: e.tool_use_id,
+      prompt: e.prompt,
+      description: e.description,
+      subagentType: e.subagent_type ?? 'general-purpose',
+      model: e.model,
+    })
+    // 替身的工具结果，内容与本测试无关
+    return { result: {} } as never
+  })
   on('agent.spawn', async (_, e) => {
-    seen.prompts.push(e.prompt)
-    return { model: 'claude-sonnet-5-5', agentId: `a${seen.prompts.length}` }
+    seen.spawnModels.push(e.model)
+    return { model: e.model ?? 'claude-opus-5-5', agentId: `a${seen.spawnModels.length}` }
   })
   on('turn.step', async function* (_, e) {
     seen.efforts.push(e.effort)
@@ -36,41 +53,76 @@ async function drain(stream: AsyncIterable<unknown>) {
   }
 }
 
-test('a tagged spawn runs every step at that effort and never sees the tag', async ($, on) => {
-  const seen = engine(on)
-  await $.agent.spawn({ ...SPAWN, prompt: '[effort:high]\nFind the router.' })
+function agentCall(id: string, extra: Record<string, unknown>) {
+  return {
+    tool: 'Agent',
+    tool_use_id: id,
+    description: 'look around',
+    prompt: 'Find the router.',
+    subagent_type: 'general-purpose',
+    ...extra,
+  } as never
+}
+
+test('a custom model and an effort reach the subagent, past the Agent schema', async ($, on) => {
+  const seen = engine($, on)
+  await $.tool.call(agentCall('toolu_1', { model: 'gpt-6', effort: 'low' }))
   await drain($.turn.step({ ...STEP, agentId: 'a1' }))
   await drain($.turn.step({ ...STEP, index: 1, agentId: 'a1' }))
 
-  expect(seen.prompts).toEqual(['Find the router.'])
-  expect(seen.efforts).toEqual(['high', 'high'])
-  expect(seen.logs).toEqual(['Subagent Explore → claude-sonnet-5-5 · high'])
+  expect(seen.calls[0]).not.toHaveProperty('model')
+  expect(seen.calls[0]).not.toHaveProperty('effort')
+  expect(seen.spawnModels).toEqual(['gpt-6'])
+  expect(seen.efforts).toEqual(['low', 'low'])
+  expect(seen.logs).toEqual(['Subagent general-purpose → gpt-6 · low'])
 })
 
-test('an untagged spawn and the main session keep the session effort', async ($, on) => {
-  const seen = engine(on)
-  await $.agent.spawn({ ...SPAWN, prompt: 'Find the router.' })
+test('an alias model is left to the Agent tool, the effort still applies', async ($, on) => {
+  const seen = engine($, on)
+  await $.tool.call(agentCall('toolu_1', { model: 'sonnet', effort: 'high' }))
   await drain($.turn.step({ ...STEP, agentId: 'a1' }))
-  await drain($.turn.step({ ...STEP, model: 'claude-opus-5-5' }))
 
-  expect(seen.prompts).toEqual(['Find the router.'])
-  expect(seen.efforts).toEqual(['max', 'max'])
-  expect(seen.logs).toEqual(['Subagent Explore → claude-sonnet-5-5 · effort inherited'])
+  expect(seen.calls[0]?.model).toBe('sonnet')
+  expect(seen.calls[0]).not.toHaveProperty('effort')
+  expect(seen.spawnModels).toEqual(['sonnet'])
+  expect(seen.efforts).toEqual(['high'])
 })
 
-test('each subagent keeps its own effort', async ($, on) => {
-  const seen = engine(on)
-  await $.agent.spawn({ ...SPAWN, prompt: '[effort:medium]\nFind the router.' })
-  await $.agent.spawn({ ...SPAWN, subagentType: 'Plan', prompt: '[effort:max]\nPlan the change.' })
+test('without model or effort, the subagent and the main session keep their own', async ($, on) => {
+  const seen = engine($, on)
+  await $.tool.call(agentCall('toolu_1', {}))
+  await drain($.turn.step({ ...STEP, agentId: 'a1' }))
+  await drain($.turn.step(STEP))
+
+  expect(seen.spawnModels).toEqual([undefined])
+  expect(seen.efforts).toEqual(['max', 'max'])
+  expect(seen.logs).toEqual(['Subagent general-purpose → claude-opus-5-5 · default effort'])
+})
+
+test('each subagent keeps its own model and effort', async ($, on) => {
+  const seen = engine($, on)
+  await $.tool.call(agentCall('toolu_1', { model: 'grok-4.7', effort: 'medium' }))
+  await $.tool.call(agentCall('toolu_2', { model: 'opus', effort: 'max' }))
   await drain($.turn.step({ ...STEP, effort: 'high', agentId: 'a2' }))
   await drain($.turn.step({ ...STEP, effort: 'high', agentId: 'a1' }))
 
+  expect(seen.spawnModels).toEqual(['grok-4.7', 'opus'])
   expect(seen.efforts).toEqual(['max', 'medium'])
 })
 
-test('the Agent tool description carries the tag convention', async ($, on) => {
-  on('tool.describe', async (_, e) => ({ description: e.description }))
-  const r = await $.tool.describe({ tool: 'Agent', description: 'Launch a new agent.', provider: SPAWN.provider })
+test('an unknown effort level is refused before anything starts', async ($, on) => {
+  const seen = engine($, on)
+  const r = await $.tool.call(agentCall('toolu_1', { model: 'gpt-6', effort: 'ultra' }))
 
-  expect(r.description).toContain('[effort:<level>]')
+  expect(r.deny).toContain('effort must be one of')
+  expect(seen.calls).toEqual([])
+  expect(seen.spawnModels).toEqual([])
+})
+
+test('the Agent tool description carries the convention', async ($, on) => {
+  on('tool.describe', async (_, e) => ({ description: e.description }))
+  const r = await $.tool.describe({ tool: 'Agent', description: 'Launch a new agent.', provider: CORE })
+
+  expect(r.description).toContain('any model ID your provider serves')
+  expect(r.description).toContain('`effort`')
 })

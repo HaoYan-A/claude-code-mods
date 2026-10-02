@@ -25,7 +25,7 @@ claude plugin marketplace update claude-code-mods
 
 | Mod | What it does |
 | --- | --- |
-| [subagent-effort](plugins/subagent-effort) | Pick each subagent's model and reasoning effort in plain words: "explore with sonnet high, plan with opus max" |
+| [subagent-effort](plugins/subagent-effort) | Pick each subagent's model and reasoning effort in plain words, any model your provider serves: "explore with sonnet high, second opinion from gpt-6 medium" |
 
 ## Before you install
 
@@ -70,7 +70,7 @@ claude plugin marketplace update claude-code-mods
 
 | 模组 | 作用 |
 | --- | --- |
-| [subagent-effort](plugins/subagent-effort) | 用一句话指定每个子代理的模型和思考等级，比如「调查代码用 sonnet high，Plan 用 opus max」 |
+| [subagent-effort](plugins/subagent-effort) | 用一句话指定每个子代理的模型和思考等级，模型可以是服务端提供的任意一个，比如「调查代码用 sonnet high，第二意见找 gpt-6 medium」 |
 
 ### 安装前须知
 
