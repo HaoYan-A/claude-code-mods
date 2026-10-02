@@ -1,0 +1,14 @@
+{
+  "name": "claude-code-mods",
+  "description": "HaoYan's Claude Code mods: function-hook plugins that change how Claude Code works",
+  "owner": {
+    "name": "HaoYan-A"
+  },
+  "plugins": [
+    {
+      "name": "subagent-effort",
+      "source": "./plugins/subagent-effort",
+      "description": "Pick each subagent's model and reasoning effort in plain words, e.g. \"explore with sonnet high, plan with opus max\""
+    }
+  ]
+}

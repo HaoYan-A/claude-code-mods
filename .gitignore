@@ -1,0 +1,5 @@
+# Claude Code 加载模组时自动生成，重新加载即恢复
+plugins/*/.claude-plugin/types/
+plugins/*/tsconfig.json
+
+.DS_Store
