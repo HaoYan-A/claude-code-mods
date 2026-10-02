@@ -1,6 +1,6 @@
 {
   "name": "subagent-effort",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Run each subagent on any model (gpt-6, grok-4.7, ...) at any reasoning effort, through model and effort parameters on the Agent tool",
   "author": {
     "name": "HaoYan-A"

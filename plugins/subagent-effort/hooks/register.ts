@@ -9,11 +9,11 @@ const USAGE =
   '\n\nAny model, any reasoning effort: `model` also takes any model ID your provider serves ' +
   '(for example `gpt-6` or `grok-4.7`), not only the aliases above. An optional `effort` ' +
   'parameter (low, medium, high, xhigh or max) sets this agent\'s reasoning effort for every ' +
-  "request it makes. Without `effort` the agent inherits the session's effort."
+  "request it makes. Without `effort` the agent keeps its default effort: its definition's, else the session's."
 
 // Agent 调用编号 → 调用里指定的自定义模型与档位，只在这次调用启动子代理的过程中有效
 const asked = new Map<string, { model?: string; effort?: ModelEffort }>()
-// 子代理编号 → 指定档位；模组重新加载后清空，届时还在跑的子代理回到继承主会话
+// 子代理编号 → 指定档位；模组重新加载后清空，届时还在跑的子代理回到默认档位
 const effortOf = new Map<string, ModelEffort>()
 
 export const register: Register = on => {
