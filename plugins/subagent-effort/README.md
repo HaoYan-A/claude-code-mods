@@ -26,6 +26,8 @@ Subagent Plan → grok-4.7 · default effort
 
 What wins, highest first: what you say > the subagent's definition file > the main session.
 
+How the mod does it, step by step (in Chinese): [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
+
 ### Models other than Claude
 
 The mod only names the model; it routes nothing. A model ID works when the endpoint Claude Code talks to (`ANTHROPIC_BASE_URL`) serves it through the Anthropic Messages API, as an LLM gateway does. Claude Code prints an `unrecognized_model` notice for such IDs and carries on. A name the endpoint does not serve fails within a second with "It may not exist or you may not have access to it".
@@ -82,6 +84,8 @@ Subagent Plan → grok-4.7 · default effort
 ```
 
 优先级从高到低：你在对话里说的 > 子代理定义文件里写的 > 主会话的档位。
+
+实现原理见 [HOW-IT-WORKS.md](HOW-IT-WORKS.md)。
 
 #### 用 Claude 以外的模型
 
