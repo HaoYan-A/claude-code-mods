@@ -15,10 +15,11 @@ claude plugin install subagent-effort@claude-code-mods
 
 A mod installed from the shell loads in the next session; in a session that is already open, run `/reload-plugins`.
 
-Update to the latest version:
+Update to the latest version (both steps: the first only refreshes the catalog, the second updates what you installed), then start a new session:
 
 ```bash
 claude plugin marketplace update claude-code-mods
+claude plugin update subagent-effort@claude-code-mods
 ```
 
 ## Mods
@@ -60,10 +61,11 @@ claude plugin install subagent-effort@claude-code-mods
 
 在命令行安装后，下一个会话生效；已经打开的会话里执行 `/reload-plugins` 即可加载。
 
-更新到最新版：
+更新到最新版（两步都要：第一步只刷新清单，第二步才更新已装的模组），然后开新会话：
 
 ```bash
 claude plugin marketplace update claude-code-mods
+claude plugin update subagent-effort@claude-code-mods
 ```
 
 ### 模组列表
